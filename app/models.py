@@ -8,3 +8,11 @@ class Product:
     price: float
     quantity: int
     min_stock: int
+
+@dataclass
+class User:
+    id: int | None
+    name: str
+    user_id: str
+    email: str
+    password: str

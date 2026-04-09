@@ -6,10 +6,11 @@ from app.ui.movementDialog import MovementDialog
 
 
 class MainWindow(tk.Tk):
-    def __init__(self, service) -> None:
+    def __init__(self, service, logged_user) -> None:
         super().__init__()
         self.service = service
         self.product_repo = service.product_repo
+        self.logged_user = logged_user
 
         self.title("Controle de Estoque")
         self.geometry("950x560")
