@@ -23,13 +23,6 @@ def validate_movement(quantity: int) -> list[str]:
 
     return errors
 
-def validate_movement(quantity: int) -> list[str]:
-    errors: list[str] = []
-    if quantity <= 0:
-        errors.append("A quantidade deve ser maior que zero.")
-    return errors
-
-
 def validate_user_data(name: str, user_id: str, email: str, password: str) -> list[str]:
     errors: list[str] = []
 

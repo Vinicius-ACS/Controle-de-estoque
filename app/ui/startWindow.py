@@ -15,42 +15,63 @@ class StartWindow(tk.Tk):
         self.user_service = UserService()
         self.product_service = ProductService()
 
-        self.title("Acesso ao Sistema")
-        self.geometry("420x250")
+        self.title("Sistema de Controle de Estoque")
+        self.geometry("500x320")
         self.resizable(False, False)
 
+        self.apply_styles()
         self.create_widgets()
 
+    def apply_styles(self) -> None:
+        style = ttk.Style()
+        style.configure("Title.TLabel", font=("Segoe UI", 18, "bold"))
+        style.configure("Subtitle.TLabel", font=("Segoe UI", 10))
+        style.configure("Main.TButton", font=("Segoe UI", 10))
+
     def create_widgets(self) -> None:
-        frame = ttk.Frame(self, padding=24)
-        frame.pack(fill="both", expand=True)
+        container = ttk.Frame(self, padding=24)
+        container.pack(fill="both", expand=True)
+
+        card = ttk.Frame(container, padding=24)
+        card.pack(expand=True)
 
         title = ttk.Label(
-            frame,
-            text="Controle de Estoque",
-            font=("Segoe UI", 16, "bold"),
+            card,
+            text="📦 Controle de Estoque",
+            style="Title.TLabel",
         )
-        title.pack(pady=(10, 10))
+        title.pack(pady=(0, 10))
 
         subtitle = ttk.Label(
-            frame,
-            text="Selecione uma opção para continuar",
-            font=("Segoe UI", 10),
+            card,
+            text="Gerencie seus produtos com segurança e praticidade.",
+            style="Subtitle.TLabel",
+            justify="center",
         )
-        subtitle.pack(pady=(0, 20))
+        subtitle.pack(pady=(0, 6))
+
+        helper = ttk.Label(
+            card,
+            text="Escolha uma opção para continuar no sistema.",
+            style="Subtitle.TLabel",
+            justify="center",
+        )
+        helper.pack(pady=(0, 22))
 
         ttk.Button(
-            frame,
-            text="Entrar",
+            card,
+            text="Entrar no sistema",
             command=self.open_login,
-            width=25,
+            width=28,
+            style="Main.TButton",
         ).pack(pady=8)
 
         ttk.Button(
-            frame,
-            text="Cadastrar",
+            card,
+            text="Cadastrar novo usuário",
             command=self.open_register,
-            width=25,
+            width=28,
+            style="Main.TButton",
         ).pack(pady=8)
 
     def open_register(self) -> None:

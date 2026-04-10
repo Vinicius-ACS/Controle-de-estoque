@@ -12,35 +12,67 @@ class MainWindow(tk.Tk):
         self.product_repo = service.product_repo
         self.logged_user = logged_user
 
-        self.title("Controle de Estoque")
-        self.geometry("950x560")
-        self.minsize(900, 500)
+        self.title("Sistema de Controle de Estoque")
+        self.geometry("1050x620")
+        self.minsize(980, 560)
 
+        self.apply_styles()
         self.configure_ui()
         self.create_widgets()
         self.load_products()
+
+    def apply_styles(self) -> None:
+        style = ttk.Style()
+        style.configure("HeaderTitle.TLabel", font=("Segoe UI", 18, "bold"))
+        style.configure("HeaderText.TLabel", font=("Segoe UI", 10))
+        style.configure("Action.TButton", font=("Segoe UI", 10))
+        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
+        style.configure("Treeview", font=("Segoe UI", 10), rowheight=28)
 
     def configure_ui(self) -> None:
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
     def create_widgets(self) -> None:
-        header = ttk.Frame(self, padding=12)
+        header = ttk.Frame(self, padding=16)
         header.grid(row=0, column=0, sticky="ew")
         header.columnconfigure(1, weight=1)
 
-        title = ttk.Label(header, text="Controle de Estoque", font=("Segoe UI", 16, "bold"))
+        title = ttk.Label(
+            header,
+            text="📦 Controle de Estoque",
+            style="HeaderTitle.TLabel",
+        )
         title.grid(row=0, column=0, sticky="w")
 
+        subtitle = ttk.Label(
+            header,
+            text="Gerencie produtos, entradas e saídas com praticidade.",
+            style="HeaderText.TLabel",
+        )
+        subtitle.grid(row=1, column=0, sticky="w", pady=(4, 0))
+
+        user_label = ttk.Label(
+            header,
+            text=f"👤 Usuário logado: {self.logged_user.name} | ID: {self.logged_user.user_id}",
+            style="HeaderText.TLabel",
+        )
+        user_label.grid(row=2, column=0, sticky="w", pady=(6, 0))
+
+        search_box = ttk.Frame(header)
+        search_box.grid(row=0, column=1, rowspan=2, sticky="e")
+
+        ttk.Label(search_box, text="Buscar produto").grid(row=0, column=0, sticky="w")
         self.search_var = tk.StringVar()
-        search_entry = ttk.Entry(header, textvariable=self.search_var)
-        search_entry.grid(row=0, column=1, padx=12, sticky="ew")
+        search_entry = ttk.Entry(search_box, textvariable=self.search_var, width=28)
+        search_entry.grid(row=1, column=0, padx=(0, 8), sticky="ew")
         search_entry.bind("<KeyRelease>", lambda event: self.search_products())
 
-        search_button = ttk.Button(header, text="Pesquisar", command=self.search_products)
-        search_button.grid(row=0, column=2, padx=4)
+        ttk.Button(search_box, text="Pesquisar", command=self.search_products).grid(
+            row=1, column=1
+        )
 
-        table_frame = ttk.Frame(self, padding=(12, 0, 12, 12))
+        table_frame = ttk.Frame(self, padding=(16, 0, 16, 12))
         table_frame.grid(row=1, column=0, sticky="nsew")
         table_frame.columnconfigure(0, weight=1)
         table_frame.rowconfigure(0, weight=1)
@@ -62,12 +94,16 @@ class MainWindow(tk.Tk):
             self.tree.heading(col, text=text)
 
         self.tree.column("id", width=60, anchor="center")
-        self.tree.column("name", width=220)
-        self.tree.column("category", width=160)
-        self.tree.column("price", width=100, anchor="e")
-        self.tree.column("quantity", width=100, anchor="center")
-        self.tree.column("min_stock", width=120, anchor="center")
+        self.tree.column("name", width=240)
+        self.tree.column("category", width=170)
+        self.tree.column("price", width=110, anchor="e")
+        self.tree.column("quantity", width=110, anchor="center")
+        self.tree.column("min_stock", width=130, anchor="center")
         self.tree.column("status", width=120, anchor="center")
+
+        self.tree.tag_configure("odd", background="#f7f7f7")
+        self.tree.tag_configure("even", background="#ffffff")
+        self.tree.tag_configure("low_stock", foreground="red")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -75,20 +111,29 @@ class MainWindow(tk.Tk):
         self.tree.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
 
-        actions = ttk.Frame(self, padding=(12, 0, 12, 12))
+        actions = ttk.Frame(self, padding=(16, 0, 16, 16))
         actions.grid(row=2, column=0, sticky="ew")
 
-        ttk.Button(actions, text="Novo produto", command=self.add_product).pack(side="left", padx=4)
-        ttk.Button(actions, text="Editar", command=self.edit_product).pack(side="left", padx=4)
-        ttk.Button(actions, text="Entrada", command=self.add_movement_in).pack(side="left", padx=4)
-        ttk.Button(actions, text="Saída", command=self.add_movement_out).pack(side="left", padx=4)
-        ttk.Button(actions, text="Excluir", command=self.delete_product).pack(side="left", padx=4)
-        ttk.Button(actions, text="Atualizar", command=self.load_products).pack(side="left", padx=4)
+        ttk.Button(actions, text="➕ Novo produto", command=self.add_product, style="Action.TButton").pack(side="left", padx=4)
+        ttk.Button(actions, text="✏ Editar", command=self.edit_product, style="Action.TButton").pack(side="left", padx=4)
+        ttk.Button(actions, text="📥 Entrada", command=self.add_movement_in, style="Action.TButton").pack(side="left", padx=4)
+        ttk.Button(actions, text="📤 Saída", command=self.add_movement_out, style="Action.TButton").pack(side="left", padx=4)
+        ttk.Button(actions, text="🗑 Excluir", command=self.delete_product, style="Action.TButton").pack(side="left", padx=4)
+        ttk.Button(actions, text="🔄 Atualizar", command=self.load_products, style="Action.TButton").pack(side="left", padx=4)
 
     def load_products(self) -> None:
         self.clear_table()
-        for product in self.product_repo.list_all():
-            status = "Baixo" if product.quantity <= product.min_stock else "OK"
+        products = self.product_repo.list_all()
+
+        for index, product in enumerate(products):
+            status = "Estoque baixo" if product.quantity <= product.min_stock else "OK"
+
+            row_tags = []
+            row_tags.append("even" if index % 2 == 0 else "odd")
+
+            if product.quantity <= product.min_stock:
+                row_tags.append("low_stock")
+
             self.tree.insert(
                 "",
                 "end",
@@ -101,6 +146,7 @@ class MainWindow(tk.Tk):
                     product.min_stock,
                     status,
                 ),
+                tags=tuple(row_tags),
             )
 
     def clear_table(self) -> None:
@@ -112,8 +158,15 @@ class MainWindow(tk.Tk):
         self.clear_table()
         products = self.product_repo.search_by_name(term) if term else self.product_repo.list_all()
 
-        for product in products:
-            status = "Baixo" if product.quantity <= product.min_stock else "OK"
+        for index, product in enumerate(products):
+            status = "Estoque baixo" if product.quantity <= product.min_stock else "OK"
+
+            row_tags = []
+            row_tags.append("even" if index % 2 == 0 else "odd")
+
+            if product.quantity <= product.min_stock:
+                row_tags.append("low_stock")
+
             self.tree.insert(
                 "",
                 "end",
@@ -126,6 +179,7 @@ class MainWindow(tk.Tk):
                     product.min_stock,
                     status,
                 ),
+                tags=tuple(row_tags),
             )
 
     def get_selected_product_id(self) -> int | None:
