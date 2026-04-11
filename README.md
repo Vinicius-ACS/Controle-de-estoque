@@ -8,6 +8,9 @@ Microempreendedores frequentemente não possuem uma ferramenta simples para cont
 ## Solução
 Este projeto oferece uma interface gráfica intuitiva para gerenciar produtos, consultar quantidades e registrar movimentações.
 
+## Publico Alvo
+O público alvo deste projeto é pequenos empreendedores que queiram fazer um controle de estoque simples.
+
 ## Funcionalidades
 - cadastro de produtos;
 - edição e exclusão;
@@ -24,4 +27,18 @@ Este projeto oferece uma interface gráfica intuitiva para gerenciar produtos, c
 
 ## Como executar
 ```bash
+# Clone o repositório:
+git clone https://github.com/Vinicius-ACS/Controle-de-estoque.git
+cd projeto1
+
+# Instale as dependências:
+pip install -r requirements.txt
+
+# Rode o arquivo:
 python -m app.main
+
+# Rode os testes:
+pytest
+
+# Rode o lint
+ruff check .
