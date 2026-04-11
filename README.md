@@ -35,7 +35,12 @@ cd projeto1
 pip install -r requirements.txt
 
 # Rode o arquivo:
-python -m app.main
+python app/ui/start_window.py
+
+## Primeiro acesso ao iniciar o sistema:
+
+1. Crie um novo usuário na tela de cadastro
+2. Utilize o login criado para acessar o sistema
 
 # Rode os testes:
 pytest
