@@ -34,9 +34,9 @@ class ProductRepository:
         rows = conn.execute(
             "SELECT id, name, category, price, quantity, min_stock FROM products WHERE name LIKE ? ORDER BY name",
             (f"%{term}%",),
-        ).fetchall
+        ).fetchall()
         conn.close()
-        return[
+        return [
             Product(
                 id=row["id"],
                 name=row["name"],

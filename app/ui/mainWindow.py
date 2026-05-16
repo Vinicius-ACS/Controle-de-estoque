@@ -1,8 +1,12 @@
+import queue
+import threading
 import tkinter as tk
-from tkinter import ttk, messagebox
+from tkinter import messagebox, ttk
 
-from app.ui.productDialog import ProductDialog
+from app.exchange_service import ExchangeService
+
 from app.ui.movementDialog import MovementDialog
+from app.ui.productDialog import ProductDialog
 
 
 class MainWindow(tk.Tk):
@@ -11,38 +15,47 @@ class MainWindow(tk.Tk):
         self.service = service
         self.product_repo = service.product_repo
         self.logged_user = logged_user
+        self.exchange_queue: queue.Queue[str] = queue.Queue()
+        self.exchange_loading = False
 
         self.title("Sistema de Controle de Estoque")
         self.geometry("1050x620")
         self.minsize(980, 560)
+        self.configure(background="#F3F4F6")
 
         self.apply_styles()
         self.configure_ui()
         self.create_widgets()
         self.load_products()
+        self.after(600, self.start_exchange_rate_load)
 
     def apply_styles(self) -> None:
         style = ttk.Style()
-        style.configure("HeaderTitle.TLabel", font=("Segoe UI", 18, "bold"))
-        style.configure("HeaderText.TLabel", font=("Segoe UI", 10))
-        style.configure("Action.TButton", font=("Segoe UI", 10))
-        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"))
-        style.configure("Treeview", font=("Segoe UI", 10), rowheight=28)
+        try:
+            style.theme_use("clam")
+        except tk.TclError:
+            pass
+
+        style.configure("App.TFrame", background="#F3F4F6")
+        style.configure("Card.TFrame", background="#FFFFFF", relief="flat")
+        style.configure("HeaderTitle.TLabel", font=("Segoe UI", 20, "bold"), background="#FFFFFF", foreground="#111827")
+        style.configure("HeaderText.TLabel", font=("Segoe UI", 10), background="#FFFFFF", foreground="#4B5563")
+        style.configure("Exchange.TLabel", font=("Segoe UI", 10, "bold"), background="#FFFFFF", foreground="#047857")
+        style.configure("Search.TLabel", font=("Segoe UI", 10, "bold"), background="#FFFFFF", foreground="#374151")
+        style.configure("Treeview.Heading", font=("Segoe UI", 10, "bold"), background="#E5E7EB", foreground="#111827")
+        style.configure("Treeview", font=("Segoe UI", 10), rowheight=30, fieldbackground="#FFFFFF")
+        style.map("Treeview", background=[("selected", "#2563EB")], foreground=[("selected", "#FFFFFF")])
 
     def configure_ui(self) -> None:
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
 
     def create_widgets(self) -> None:
-        header = ttk.Frame(self, padding=16)
-        header.grid(row=0, column=0, sticky="ew")
+        header = ttk.Frame(self, padding=16, style="Card.TFrame")
+        header.grid(row=0, column=0, sticky="ew", padx=16, pady=(16, 10))
         header.columnconfigure(1, weight=1)
 
-        title = ttk.Label(
-            header,
-            text="📦 Controle de Estoque",
-            style="HeaderTitle.TLabel",
-        )
+        title = ttk.Label(header, text="📦 Controle de Estoque", style="HeaderTitle.TLabel")
         title.grid(row=0, column=0, sticky="w")
 
         subtitle = ttk.Label(
@@ -59,20 +72,34 @@ class MainWindow(tk.Tk):
         )
         user_label.grid(row=2, column=0, sticky="w", pady=(6, 0))
 
-        search_box = ttk.Frame(header)
-        search_box.grid(row=0, column=1, rowspan=2, sticky="e")
+        self.exchange_label = ttk.Label(
+            header,
+            text="💵 Dólar: carregando...",
+            style="Exchange.TLabel",
+        )
+        self.exchange_label.grid(row=3, column=0, sticky="w", pady=(6, 0))
 
-        ttk.Label(search_box, text="Buscar produto").grid(row=0, column=0, sticky="w")
+        search_box = ttk.Frame(header, style="Card.TFrame")
+        search_box.grid(row=0, column=1, rowspan=4, sticky="e")
+        search_box.columnconfigure(0, weight=1)
+
+        ttk.Label(search_box, text="Buscar produto", style="Search.TLabel").grid(row=0, column=0, sticky="w")
         self.search_var = tk.StringVar()
-        search_entry = ttk.Entry(search_box, textvariable=self.search_var, width=28)
-        search_entry.grid(row=1, column=0, padx=(0, 8), sticky="ew")
-        search_entry.bind("<KeyRelease>", lambda event: self.search_products())
+        search_entry = ttk.Entry(search_box, textvariable=self.search_var, width=30)
+        search_entry.grid(row=1, column=0, padx=(0, 8), pady=(4, 0), sticky="ew")
+        search_entry.bind("<KeyRelease>", lambda _event: self.search_products())
 
-        ttk.Button(search_box, text="Pesquisar", command=self.search_products).grid(
-            row=1, column=1
+        self.create_button(
+            search_box,
+            text="🔎 Pesquisar",
+            command=self.search_products,
+            background="#2563EB",
+            row=1,
+            column=1,
+            sticky="ew",
         )
 
-        table_frame = ttk.Frame(self, padding=(16, 0, 16, 12))
+        table_frame = ttk.Frame(self, padding=(16, 0, 16, 12), style="App.TFrame")
         table_frame.grid(row=1, column=0, sticky="nsew")
         table_frame.columnconfigure(0, weight=1)
         table_frame.rowconfigure(0, weight=1)
@@ -101,9 +128,9 @@ class MainWindow(tk.Tk):
         self.tree.column("min_stock", width=130, anchor="center")
         self.tree.column("status", width=120, anchor="center")
 
-        self.tree.tag_configure("odd", background="#f7f7f7")
-        self.tree.tag_configure("even", background="#ffffff")
-        self.tree.tag_configure("low_stock", foreground="red")
+        self.tree.tag_configure("odd", background="#F9FAFB")
+        self.tree.tag_configure("even", background="#FFFFFF")
+        self.tree.tag_configure("low_stock", foreground="#DC2626")
 
         scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
         self.tree.configure(yscrollcommand=scrollbar.set)
@@ -111,15 +138,103 @@ class MainWindow(tk.Tk):
         self.tree.grid(row=0, column=0, sticky="nsew")
         scrollbar.grid(row=0, column=1, sticky="ns")
 
-        actions = ttk.Frame(self, padding=(16, 0, 16, 16))
+        actions = ttk.Frame(self, padding=(16, 0, 16, 16), style="App.TFrame")
         actions.grid(row=2, column=0, sticky="ew")
 
-        ttk.Button(actions, text="➕ Novo produto", command=self.add_product, style="Action.TButton").pack(side="left", padx=4)
-        ttk.Button(actions, text="✏ Editar", command=self.edit_product, style="Action.TButton").pack(side="left", padx=4)
-        ttk.Button(actions, text="📥 Entrada", command=self.add_movement_in, style="Action.TButton").pack(side="left", padx=4)
-        ttk.Button(actions, text="📤 Saída", command=self.add_movement_out, style="Action.TButton").pack(side="left", padx=4)
-        ttk.Button(actions, text="🗑 Excluir", command=self.delete_product, style="Action.TButton").pack(side="left", padx=4)
-        ttk.Button(actions, text="🔄 Atualizar", command=self.load_products, style="Action.TButton").pack(side="left", padx=4)
+        self.create_button(actions, "➕ Novo produto", self.add_product, "#16A34A").pack(side="left", padx=4)
+        self.create_button(actions, "✏ Editar", self.edit_product, "#F59E0B", foreground="#111827").pack(side="left", padx=4)
+        self.create_button(actions, "📥 Entrada", self.add_movement_in, "#0EA5E9").pack(side="left", padx=4)
+        self.create_button(actions, "📤 Saída", self.add_movement_out, "#6366F1").pack(side="left", padx=4)
+        self.create_button(actions, "🗑 Excluir", self.delete_product, "#DC2626").pack(side="left", padx=4)
+        self.create_button(actions, "🔄 Atualizar", self.refresh_all, "#374151").pack(side="left", padx=4)
+
+    def create_button(
+        self,
+        parent,
+        text: str,
+        command,
+        background: str,
+        foreground: str = "#FFFFFF",
+        row: int | None = None,
+        column: int | None = None,
+        sticky: str | None = None,
+    ) -> tk.Button:
+        button = tk.Button(
+            parent,
+            text=text,
+            command=command,
+            bg=background,
+            fg=foreground,
+            activebackground=background,
+            activeforeground=foreground,
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+            font=("Segoe UI", 10, "bold"),
+            padx=12,
+            pady=7,
+        )
+        if row is not None and column is not None:
+            button.grid(row=row, column=column, sticky=sticky, pady=(4, 0))
+        return button
+
+    def refresh_all(self) -> None:
+        self.load_products()
+        self.start_exchange_rate_load()
+
+    def start_exchange_rate_load(self) -> None:
+        if self.exchange_loading:
+            return
+
+        self.exchange_loading = True
+        self.clear_exchange_queue()
+        self.exchange_label.config(text="💵 Dólar: carregando...")
+
+        thread = threading.Thread(target=self.fetch_exchange_rate, daemon=True)
+        thread.start()
+
+        self.after(100, self.process_exchange_queue)
+        self.after(12000, self.exchange_timeout)
+
+    def clear_exchange_queue(self) -> None:
+        while not self.exchange_queue.empty():
+            try:
+                self.exchange_queue.get_nowait()
+            except queue.Empty:
+                break
+
+    def fetch_exchange_rate(self) -> None:
+        try:
+            data = ExchangeService().get_usd_brl_rate()
+            text = f"💵 Dólar hoje: {self.format_money(data['bid'])}"
+
+            if data.get("date"):
+                text += f" • atualizado em {data['date']}"
+
+        except Exception as error:
+            print(f"Erro ao buscar dólar: {error}")
+            text = "💵 Dólar: indisponível. Clique em Atualizar."
+
+        self.exchange_queue.put(text)
+
+    def process_exchange_queue(self) -> None:
+        try:
+            text = self.exchange_queue.get_nowait()
+        except queue.Empty:
+            if self.exchange_loading and self.winfo_exists():
+                self.after(100, self.process_exchange_queue)
+            return
+
+        self.exchange_loading = False
+        self.exchange_label.config(text=text)
+
+    def exchange_timeout(self) -> None:
+        if self.exchange_loading:
+            self.exchange_loading = False
+            self.exchange_label.config(text="💵 Dólar: indisponível. Clique em Atualizar.")
+
+    def format_money(self, value: float) -> str:
+        return f"R$ {value:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
 
     def load_products(self) -> None:
         self.clear_table()
