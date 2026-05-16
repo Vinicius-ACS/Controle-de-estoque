@@ -3,47 +3,61 @@
 Aplicação desktop em Python com interface gráfica para cadastro de produtos e controle de estoque.
 
 ## Problema
+
 Microempreendedores frequentemente não possuem uma ferramenta simples para controlar entradas, saídas e níveis mínimos de estoque.
 
 ## Solução
-Este projeto oferece uma interface gráfica intuitiva para gerenciar produtos, consultar quantidades e registrar movimentações.
 
-## Publico Alvo
-O público alvo deste projeto é pequenos empreendedores que queiram fazer um controle de estoque simples.
+Este projeto oferece uma interface gráfica intuitiva para gerenciar produtos, consultar quantidades, registrar movimentações e visualizar a cotação atual do dólar.
+
+## Público-alvo
+
+Pequenos empreendedores que queiram fazer um controle de estoque simples.
 
 ## Funcionalidades
-- cadastro de produtos;
-- edição e exclusão;
+
+- Cadastro de produtos;
+- edição e exclusão de produtos;
 - entrada e saída de estoque;
 - busca por nome;
-- alerta de estoque baixo.
+- alerta de estoque baixo;
+- cotação do dólar via API ao abrir o sistema e pelo botão Atualizar.
 
 ## Tecnologias
-- Python
-- Tkinter
-- SQLite
-- pytest
-- ruff
+
+- Python;
+- Tkinter;
+- SQLite;
+- API AwesomeAPI para cotação USD/BRL;
+- pytest;
+- ruff.
 
 ## Como executar
-```bash
-# Clone o repositório:
-git clone https://github.com/Vinicius-ACS/Controle-de-estoque.git
-cd projeto1
 
-# Instale as dependências:
+```bash
+# Entre na pasta do projeto
+cd controle_estoque_interface_corrigida
+
+# Instale as dependências de desenvolvimento
 pip install -r requirements.txt
 
-# Rode o arquivo:
-python app/ui/start_window.py
+# Rode o sistema
+python -m app.main
+```
 
-## Primeiro acesso ao iniciar o sistema:
+## Primeiro acesso
 
-1. Crie um novo usuário na tela de cadastro
-2. Utilize o login criado para acessar o sistema
+1. Crie um novo usuário na tela de cadastro.
+2. Utilize o login criado para acessar o sistema.
 
-# Rode os testes:
-pytest
+## Testes
 
-# Rode o lint
+```bash
+python -m pytest
+```
+
+## Lint
+
+```bash
 ruff check .
+```
