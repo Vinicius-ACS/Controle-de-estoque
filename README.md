@@ -99,6 +99,7 @@ ruff check .
 
 ## Estrutura do projeto
 
+```text
 Controle-de-estoque/
 ├── .github/
 │   └── workflows/
@@ -115,3 +116,4 @@ Controle-de-estoque/
 ├── requirements.txt
 ├── pyproject.toml
 └── .gitignore
+```
